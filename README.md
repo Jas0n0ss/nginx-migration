@@ -49,6 +49,8 @@ Options:
 # Exclude multiple directories
 ```
 
+![image-20250429143759287](https://p.ipic.vip/w7gdag.png)
+
 ------
 
 ## 🔁 `restore-nginx.sh`
@@ -80,6 +82,8 @@ Options:
 # Full custom restore
 ```
 
+![image-20250429143703359](https://p.ipic.vip/c7kjac.png)
+
 ------
 
 ## 🔐 Safety Notes
@@ -87,3 +91,4 @@ Options:
 - Ensure **no Nginx service or process is running** before restoration.
 - The restore process will **overwrite** critical paths like `/etc/nginx`, `/usr/lib64/nginx`, `/data/static`.
 - Recommended: test in staging before production use.
+

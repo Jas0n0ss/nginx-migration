@@ -1,0 +1,4 @@
+.//usr/nginx/modules/ngx_http_geoip2_module.so
+.//usr/nginx/modules/ngx_stream_geoip2_module.so
+.//usr/nginx/modules/ngx_http_vhost_traffic_status_module.so
+.//usr/sbin/nginx

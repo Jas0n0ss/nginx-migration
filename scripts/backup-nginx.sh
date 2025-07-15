@@ -123,10 +123,26 @@ ldd "$NGINX_BIN" | awk '{print $3}' | while read -r lib; do
 done
 success "Shared libraries backed up"
 
-# ===== Step 7: Create tarball =====
+# ====== Step 7. Create tarball ======
 step 7 "Creating backup archive: $BACKUP_TAR"
-tar -czf "$BACKUP_TAR" -C /tmp "$(basename "$WORK_DIR")"
+
+# Ensure output directory is writable
+OUT_DIR=$(dirname "$BACKUP_TAR")
+if [[ ! -w "$OUT_DIR" ]]; then
+  error_exit "No write permission to output directory: $OUT_DIR"
+fi
+
+# Remove existing backup file if exists
+if [[ -f "$BACKUP_TAR" ]]; then
+  warning "Existing backup file found, removing: $BACKUP_TAR"
+  rm -f "$BACKUP_TAR" || error_exit "Failed to remove old backup file"
+fi
+
+# Create the tar.gz
+tar czf "$BACKUP_TAR" -C /tmp nginx-backup || error_exit "Tar archive creation failed"
+
 success "Backup archive created"
+
 
 # ===== Step 8: Cleanup =====
 step 8 "Cleaning up temporary files..."

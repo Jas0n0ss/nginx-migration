@@ -104,10 +104,14 @@ fi
 
 # ===== Step 4: Restore nginx binary =====
 step 4 "Restoring nginx binary..."
-cp -v "$WORK_DIR/nginx" "$NGINX_BIN"
-chmod 755 "$NGINX_BIN"
-chown root:root "$NGINX_BIN"
-success "Nginx binary restored"
+if [[ -f "$WORK_DIR/nginx" ]]; then
+  cp -v "$WORK_DIR/nginx" "$NGINX_BIN"
+  chmod 755 "$NGINX_BIN"
+  chown root:root "$NGINX_BIN"
+  success "Nginx binary restored"
+else
+  warning "Nginx binary file not found in backup, skipping"
+fi
 
 # ===== Step 5: Restore modules =====
 step 5 "Restoring nginx modules..."
@@ -118,7 +122,7 @@ if [[ -d "$WORK_DIR/modules" ]]; then
   chmod -R 755 "$MODULES_DIR"
   success "Modules restored"
 else
-  warning "Modules directory missing in backup"
+  warning "Modules directory missing in backup, skipping"
 fi
 
 # ===== Step 6: Restore nginx config =====
@@ -130,17 +134,21 @@ if [[ -d "$WORK_DIR/nginx-conf" ]]; then
   chmod -R 644 "$NGINX_CONF_DIR"
   success "Configuration restored"
 else
-  warning "Nginx config directory missing in backup"
+  warning "Nginx config directory missing in backup, skipping"
 fi
 
 # ===== Step 7: Create cache and log directories with correct ownership =====
 step 7 "Creating necessary cache and log directories..."
 for d in "${CACHE_DIRS[@]}" "${LOG_DIRS[@]}" "${RUN_DIRS[@]}"; do
-  mkdir -p "$d"
+  if [[ ! -d "$d" ]]; then
+    mkdir -p "$d"
+    success "Created directory $d"
+  else
+    success "Directory $d exists"
+  fi
   chown -R nginx:nginx "$d"
   chmod 750 "$d"
 done
-success "Cache, log, and run directories created with ownership"
 
 # ===== Step 8: Restore systemd unit =====
 step 8 "Restoring systemd service file..."
@@ -153,7 +161,7 @@ if [[ -f "$WORK_DIR/nginx.service" ]]; then
     fi
   done
 else
-  warning "Systemd service file missing in backup"
+  warning "Systemd service file missing in backup, skipping"
 fi
 
 # ===== Step 9: Reload systemd and restart nginx =====

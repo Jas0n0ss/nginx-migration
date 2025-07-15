@@ -1,5 +1,5 @@
 #!/bin/bash
-# Restore Nginx backup archive
+# Restore Nginx backup archive and prepare environment
 
 set -euo pipefail
 
@@ -16,6 +16,19 @@ WORK_DIR="/tmp/nginx-restore"
 NGINX_BIN="/usr/sbin/nginx"
 MODULES_DIR="/usr/lib64/nginx/modules"
 NGINX_CONF_DIR="/etc/nginx"
+CACHE_DIRS=(
+  /var/cache/nginx/client_temp
+  /var/cache/nginx/proxy_temp
+  /var/cache/nginx/fastcgi_temp
+  /var/cache/nginx/uwsgi_temp
+  /var/cache/nginx/scgi_temp
+)
+LOG_DIRS=(
+  /var/log/nginx
+)
+RUN_DIRS=(
+  /var/run
+)
 SYSTEMD_PATHS=("/usr/lib/systemd/system/nginx.service" "/etc/systemd/system/nginx.service")
 
 # ===== Helpers =====
@@ -73,15 +86,31 @@ step 2 "Extracting backup archive..."
 tar -xzf "$BACKUP_ARCHIVE" -C /tmp
 success "Backup extracted"
 
-# ===== Step 3: Restore nginx binary =====
-step 3 "Restoring nginx binary..."
+# ===== Step 3: Ensure nginx user and group =====
+step 3 "Checking and creating nginx user/group if missing..."
+if ! id -u nginx >/dev/null 2>&1; then
+  useradd --system --no-create-home --shell /sbin/nologin nginx
+  success "Created system user 'nginx'"
+else
+  success "User 'nginx' exists"
+fi
+
+if ! getent group nginx >/dev/null 2>&1; then
+  groupadd --system nginx
+  success "Created system group 'nginx'"
+else
+  success "Group 'nginx' exists"
+fi
+
+# ===== Step 4: Restore nginx binary =====
+step 4 "Restoring nginx binary..."
 cp -v "$WORK_DIR/nginx" "$NGINX_BIN"
 chmod 755 "$NGINX_BIN"
 chown root:root "$NGINX_BIN"
 success "Nginx binary restored"
 
-# ===== Step 4: Restore modules =====
-step 4 "Restoring nginx modules..."
+# ===== Step 5: Restore modules =====
+step 5 "Restoring nginx modules..."
 if [[ -d "$WORK_DIR/modules" ]]; then
   mkdir -p "$MODULES_DIR"
   cp -rv "$WORK_DIR/modules/"* "$MODULES_DIR/"
@@ -92,8 +121,8 @@ else
   warning "Modules directory missing in backup"
 fi
 
-# ===== Step 5: Restore nginx config =====
-step 5 "Restoring nginx configuration..."
+# ===== Step 6: Restore nginx config =====
+step 6 "Restoring nginx configuration..."
 if [[ -d "$WORK_DIR/nginx-conf" ]]; then
   mkdir -p "$NGINX_CONF_DIR"
   cp -rv "$WORK_DIR/nginx-conf/"* "$NGINX_CONF_DIR/"
@@ -104,10 +133,18 @@ else
   warning "Nginx config directory missing in backup"
 fi
 
-# ===== Step 6: Restore systemd unit =====
-step 6 "Restoring systemd service file..."
+# ===== Step 7: Create cache and log directories with correct ownership =====
+step 7 "Creating necessary cache and log directories..."
+for d in "${CACHE_DIRS[@]}" "${LOG_DIRS[@]}" "${RUN_DIRS[@]}"; do
+  mkdir -p "$d"
+  chown -R nginx:nginx "$d"
+  chmod 750 "$d"
+done
+success "Cache, log, and run directories created with ownership"
+
+# ===== Step 8: Restore systemd unit =====
+step 8 "Restoring systemd service file..."
 if [[ -f "$WORK_DIR/nginx.service" ]]; then
-  # Try to restore to the first valid systemd path found
   for svc in "${SYSTEMD_PATHS[@]}"; do
     if [[ -d $(dirname "$svc") ]]; then
       cp -v "$WORK_DIR/nginx.service" "$svc"
@@ -119,14 +156,14 @@ else
   warning "Systemd service file missing in backup"
 fi
 
-# ===== Step 7: Reload systemd and restart nginx =====
-step 7 "Reloading systemd daemon and restarting nginx..."
+# ===== Step 9: Reload systemd and restart nginx =====
+step 9 "Reloading systemd daemon and restarting nginx..."
 systemctl daemon-reload
 systemctl restart nginx
 success "Nginx service restarted"
 
 # ===== Cleanup =====
-step 8 "Cleaning up temporary files..."
+step 10 "Cleaning up temporary files..."
 rm -rf "$WORK_DIR"
 success "Cleanup done"
 

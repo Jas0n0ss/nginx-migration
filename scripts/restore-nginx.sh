@@ -150,19 +150,35 @@ for d in "${CACHE_DIRS[@]}" "${LOG_DIRS[@]}" "${RUN_DIRS[@]}"; do
   chmod 750 "$d"
 done
 
-# ===== Step 8: Restore systemd unit =====
-step 8 "Restoring systemd service file..."
-if [[ -f "$WORK_DIR/nginx.service" ]]; then
-  for svc in "${SYSTEMD_PATHS[@]}"; do
-    if [[ -d $(dirname "$svc") ]]; then
-      cp -v "$WORK_DIR/nginx.service" "$svc"
-      success "Systemd unit restored to $svc"
-      break
+# ===== Step 8: Restore systemd service file(s) =====
+step 8 "Restoring systemd service file(s)..."
+
+RESTORE_PATHS=(
+  "/etc/systemd/system/nginx.service"
+  "/usr/lib/systemd/system/nginx.service"
+)
+
+for restored_file in "$WORK_DIR/systemd/nginx.service"; do
+  for target in "${RESTORE_PATHS[@]}"; do
+    if [[ -f "$restored_file" ]]; then
+      # 备份现有的目标文件
+      if [[ -f "$target" ]]; then
+        cp -v "$target" "$target.bak.$(date +%Y%m%d%H%M%S)"
+        warning "Existing $target backed up"
+      fi
+      cp -v "$restored_file" "$target"
+      chmod 644 "$target"
+      success "Restored systemd unit to: $target"
     fi
   done
-else
-  warning "Systemd service file missing in backup, skipping"
-fi
+done
+
+systemctl daemon-reexec
+systemctl daemon-reload
+systemctl enable nginx
+systemctl restart nginx
+success "Systemd restored and nginx service restarted"
+
 
 # ===== Step 9: Reload systemd and restart nginx =====
 step 9 "Reloading systemd daemon and restarting nginx..."

@@ -89,20 +89,29 @@ else
   warning "Nginx config directory not found: $NGINX_CONF_DIR"
 fi
 
-# ===== Step 5: Backup systemd unit =====
-step 5 "Backing up systemd service file..."
-SYSTEMD_FOUND=0
-for svc in "${SYSTEMD_PATHS[@]}"; do
-  if [[ -f "$svc" ]]; then
-    cp -v "$svc" "$WORK_DIR/"
-    SYSTEMD_FOUND=1
-    success "Systemd unit backed up from $svc"
-    break
+# ====== Step 5. Backup nginx systemd service ======
+step 5 "Backing up nginx systemd service..."
+
+mkdir -p "$WORK_DIR/systemd"
+
+SYSTEMD_PATHS=(
+  "/etc/systemd/system/nginx.service"
+  "/usr/lib/systemd/system/nginx.service"
+)
+
+FOUND=0
+for path in "${SYSTEMD_PATHS[@]}"; do
+  if [ -f "$path" ]; then
+    cp -v "$path" "$WORK_DIR/systemd/"
+    success "Backed up: $path"
+    FOUND=1
   fi
 done
-if [[ $SYSTEMD_FOUND -eq 0 ]]; then
-  warning "Systemd service file not found"
+
+if [ "$FOUND" -eq 0 ]; then
+  warning "No nginx.service file found in common locations"
 fi
+
 
 # ===== Step 6: Backup dependencies =====
 step 6 "Backing up nginx shared libraries..."

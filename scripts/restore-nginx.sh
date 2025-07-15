@@ -1,194 +1,153 @@
 #!/bin/bash
-# Restore Nginx backup archive and prepare environment
-
-set -euo pipefail
+set -e
 
 # ===== Colors =====
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-MAGENTA='\033[1;35m'
 NC='\033[0m'
-
-# ===== Defaults =====
-BACKUP_ARCHIVE=""
-WORK_DIR="/tmp/nginx-restore"
-NGINX_BIN="/usr/sbin/nginx"
-MODULES_DIR="/usr/lib64/nginx/modules"
-NGINX_CONF_DIR="/etc/nginx"
-CACHE_DIRS=(
-  /var/cache/nginx/client_temp
-  /var/cache/nginx/proxy_temp
-  /var/cache/nginx/fastcgi_temp
-  /var/cache/nginx/uwsgi_temp
-  /var/cache/nginx/scgi_temp
-)
-LOG_DIRS=(
-  /var/log/nginx
-)
-RUN_DIRS=(
-  /var/run
-)
-SYSTEMD_PATHS=("/usr/lib/systemd/system/nginx.service" "/etc/systemd/system/nginx.service")
 
 # ===== Helpers =====
 echo_color() { echo -e "${1}${2}${NC}"; }
 step()       { echo_color "$YELLOW" "[Step $1] $2"; }
 success()    { echo_color "$GREEN" "[OK] $1"; }
-warning()    { echo_color "$YELLOW" "[WARN] $1"; }
+warn()       { echo_color "$YELLOW" "[WARN] $1"; }
 error_exit() { echo_color "$RED" "[ERROR] $1"; exit 1; }
+
+# ===== Parse Arguments =====
+BACKUP_TAR=""
 
 print_help() {
   cat <<EOF
-Usage: $0 --backup <backup-archive.tar.gz>
+Usage: $0 --backup <backup-tar.gz>
 
 Options:
-  --backup <file>    Backup archive to restore
-  --help             Show this help message
-
+  --backup    Path to the nginx backup tarball
+  --help      Show this help
 EOF
   exit 0
 }
 
-# ===== Parse Args =====
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --backup)
-      BACKUP_ARCHIVE="$2"
-      shift 2
-      ;;
-    --help)
-      print_help
-      ;;
-    *)
-      echo_color "$RED" "Unknown argument: $1"
-      print_help
-      ;;
+    --backup) BACKUP_TAR="$2"; shift 2 ;;
+    --help) print_help ;;
+    *) error_exit "Unknown argument: $1" ;;
   esac
 done
 
-if [[ -z "$BACKUP_ARCHIVE" ]]; then
-  error_exit "Backup archive is required. Use --backup <file>"
+if [[ -z "$BACKUP_TAR" ]]; then
+  error_exit "Backup file must be specified with --backup"
 fi
 
-if [[ ! -f "$BACKUP_ARCHIVE" ]]; then
-  error_exit "Backup archive not found: $BACKUP_ARCHIVE"
+if [[ ! -f "$BACKUP_TAR" ]]; then
+  error_exit "Backup file not found: $BACKUP_TAR"
 fi
 
-# ===== Step 1: Prepare workspace =====
+# ===== Variables =====
+RESTORE_DIR="/tmp/nginx-restore"
+
+# ===== Step 1: Prepare restore workspace =====
 step 1 "Preparing restore workspace..."
-rm -rf "$WORK_DIR"
-mkdir -p "$WORK_DIR"
-success "Workspace ready: $WORK_DIR"
+rm -rf "$RESTORE_DIR"
+mkdir -p "$RESTORE_DIR"
+success "Workspace ready: $RESTORE_DIR"
 
-# ===== Step 2: Extract backup =====
+# ===== Step 2: Extract backup archive =====
 step 2 "Extracting backup archive..."
-tar -xzf "$BACKUP_ARCHIVE" -C /tmp
+tar -xzf "$BACKUP_TAR" -C "$RESTORE_DIR"
 success "Backup extracted"
 
-# ===== Step 3: Ensure nginx user and group =====
+# ===== Step 3: Check and create nginx user/group if missing =====
 step 3 "Checking and creating nginx user/group if missing..."
-if ! id -u nginx >/dev/null 2>&1; then
+if ! id nginx &>/dev/null; then
   useradd --system --no-create-home --shell /sbin/nologin nginx
   success "Created system user 'nginx'"
 else
   success "User 'nginx' exists"
 fi
 
-if ! getent group nginx >/dev/null 2>&1; then
+if ! getent group nginx &>/dev/null; then
   groupadd --system nginx
-  success "Created system group 'nginx'"
+  success "Created group 'nginx'"
 else
   success "Group 'nginx' exists"
 fi
 
 # ===== Step 4: Restore nginx binary =====
 step 4 "Restoring nginx binary..."
-if [[ -f "$WORK_DIR/nginx" ]]; then
-  cp -v "$WORK_DIR/nginx" "$NGINX_BIN"
-  chmod 755 "$NGINX_BIN"
-  chown root:root "$NGINX_BIN"
-  success "Nginx binary restored"
+if [[ -f "$RESTORE_DIR/nginx" ]]; then
+  cp "$RESTORE_DIR/nginx" /usr/sbin/nginx
+  chmod +x /usr/sbin/nginx
+  success "Nginx binary restored to /usr/sbin/nginx"
 else
-  warning "Nginx binary file not found in backup, skipping"
+  warn "Nginx binary file not found in backup, skipping"
 fi
 
-# ===== Step 5: Restore modules =====
+# ===== Step 5: Restore nginx modules =====
 step 5 "Restoring nginx modules..."
-if [[ -d "$WORK_DIR/modules" ]]; then
-  mkdir -p "$MODULES_DIR"
-  cp -rv "$WORK_DIR/modules/"* "$MODULES_DIR/"
-  chown -R nginx:nginx "$MODULES_DIR"
-  chmod -R 755 "$MODULES_DIR"
-  success "Modules restored"
+if [[ -d "$RESTORE_DIR/modules" ]]; then
+  mkdir -p /usr/lib64/nginx/modules
+  cp -r "$RESTORE_DIR/modules/"* /usr/lib64/nginx/modules/
+  success "Modules restored to /usr/lib64/nginx/modules"
 else
-  warning "Modules directory missing in backup, skipping"
+  warn "Modules directory missing in backup, skipping"
 fi
 
-# ===== Step 6: Restore nginx config =====
+# ===== Step 6: Restore nginx configuration =====
 step 6 "Restoring nginx configuration..."
-if [[ -d "$WORK_DIR/nginx-conf" ]]; then
-  mkdir -p "$NGINX_CONF_DIR"
-  cp -rv "$WORK_DIR/nginx-conf/"* "$NGINX_CONF_DIR/"
-  chown -R nginx:nginx "$NGINX_CONF_DIR"
-  chmod -R 644 "$NGINX_CONF_DIR"
-  success "Configuration restored"
+if [[ -d "$RESTORE_DIR/nginx-conf" ]]; then
+  mkdir -p /etc/nginx
+  cp -r "$RESTORE_DIR/nginx-conf/"* /etc/nginx/
+  success "Nginx config restored to /etc/nginx"
 else
-  warning "Nginx config directory missing in backup, skipping"
+  warn "Nginx config directory missing in backup, skipping"
 fi
 
-# ===== Step 7: Create cache and log directories with correct ownership =====
+# ===== Step 7: Create cache and log directories if missing =====
 step 7 "Creating necessary cache and log directories..."
-for d in "${CACHE_DIRS[@]}" "${LOG_DIRS[@]}" "${RUN_DIRS[@]}"; do
+for d in /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp /var/cache/nginx/fastcgi_temp \
+  /var/cache/nginx/uwsgi_temp /var/cache/nginx/scgi_temp /var/log/nginx /var/run; do
   if [[ ! -d "$d" ]]; then
     mkdir -p "$d"
+    chown -R nginx:nginx "$d"
     success "Created directory $d"
   else
     success "Directory $d exists"
   fi
-  chown -R nginx:nginx "$d"
-  chmod 750 "$d"
 done
 
 # ===== Step 8: Restore systemd service file(s) =====
 step 8 "Restoring systemd service file(s)..."
+SYSTEMD_TARGET="/etc/systemd/system/nginx.service"
 
-RESTORE_PATHS=(
-  "/etc/systemd/system/nginx.service"
-  "/usr/lib/systemd/system/nginx.service"
-)
+if [[ -f "$RESTORE_DIR/nginx.service" ]]; then
+  cp "$RESTORE_DIR/nginx.service" "$SYSTEMD_TARGET"
+  success "Systemd service restored from $RESTORE_DIR/nginx.service"
+elif [[ -f "$RESTORE_DIR/systemd/nginx.service" ]]; then
+  cp "$RESTORE_DIR/systemd/nginx.service" "$SYSTEMD_TARGET"
+  success "Systemd service restored from $RESTORE_DIR/systemd/nginx.service"
+else
+  warn "Systemd service file missing in backup, skipping"
+fi
 
-for restored_file in "$WORK_DIR/systemd/nginx.service"; do
-  for target in "${RESTORE_PATHS[@]}"; do
-    if [[ -f "$restored_file" ]]; then
-      # 备份现有的目标文件
-      if [[ -f "$target" ]]; then
-        cp -v "$target" "$target.bak.$(date +%Y%m%d%H%M%S)"
-        warning "Existing $target backed up"
-      fi
-      cp -v "$restored_file" "$target"
-      chmod 644 "$target"
-      success "Restored systemd unit to: $target"
-    fi
-  done
-done
-
-systemctl daemon-reexec
+# ===== Step 9: Reload systemd daemon and enable nginx service =====
+step 9 "Reloading systemd daemon and enabling nginx service..."
 systemctl daemon-reload
-systemctl enable nginx
-systemctl restart nginx
-success "Systemd restored and nginx service restarted"
+if systemctl enable nginx; then
+  success "Enabled nginx service"
+else
+  warn "Failed to enable nginx service"
+fi
 
+if systemctl restart nginx; then
+  success "Nginx service started"
+else
+  warn "Failed to start nginx service, please check logs"
+fi
 
-# ===== Step 9: Reload systemd and restart nginx =====
-step 9 "Reloading systemd daemon and restarting nginx..."
-systemctl daemon-reload
-systemctl restart nginx
-success "Nginx service restarted"
+# ===== Finished =====
+echo
+echo_color "$GREEN" "Nginx restoration completed successfully."
 
-# ===== Cleanup =====
-step 10 "Cleaning up temporary files..."
-rm -rf "$WORK_DIR"
-success "Cleanup done"
-
-echo_color "$MAGENTA" "[DONE] Nginx restore completed successfully"
+exit 0

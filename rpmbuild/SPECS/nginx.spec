@@ -20,7 +20,7 @@ BuildArch:      x86_64
 
 BuildRequires:  gcc, make, automake, autoconf, libtool
 BuildRequires:  pcre-devel, zlib-devel, openssl-devel
-BuildRequires:  systemd, git, which
+BuildRequires:  systemd-devel, git, which
 BuildRequires:  readline-devel, perl
 BuildRequires:  luajit, luajit-devel
 

@@ -12,15 +12,18 @@ jobs:
   build-and-release:
     runs-on: ubuntu-latest
     container:
-      image: fedora:39
+      image: quay.io/centos/centos:stream9
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install build dependencies
         run: |
-          dnf install -y rpm-build gcc make wget git autoconf automake libtool \
-            openssl-devel pcre-devel zlib-devel systemd-devel readline-devel luajit-devel
+          dnf install -y epel-release
+          dnf groupinstall -y "Development Tools"
+          dnf install -y rpm-build wget git autoconf automake libtool \
+            openssl-devel pcre2-devel zlib-devel systemd-devel \
+            readline-devel perl luajit luajit-devel which
 
       - name: Prepare rpmbuild directories
         run: |

@@ -1,3 +1,13 @@
+name: Build and Release Nginx RPM
+
+on:
+  push:
+    paths:
+      - 'nginx-source/**'
+      - '.github/workflows/build-and-release.yml'
+      - 'scripts/**'
+      - 'rpmbuild/SPECS/nginx.spec'
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest

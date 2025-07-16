@@ -1,35 +1,75 @@
 # nginx.spec - RPM spec file for building Nginx with dynamic modules and systemd support
 
 Name:           nginx
-Version:        1.28.0
+Version:        1.25.1
 Release:        1%{?dist}
-Summary:        High-performance web server and reverse proxy server
+Summary:        High-performance web server and reverse proxy with Lua and dynamic module support
+
 License:        BSD
 URL:            http://nginx.org
 Source0:        nginx-%{version}.tar.gz
 Source1:        nginx.service
+Source2:        ngx_http_geoip2_module-v3.4.tar.gz
+Source3:        nginx-module-vts-v0.2.4.tar.gz
+Source4:        ngx_devel_kit-v0.3.4.tar.gz
+Source5:        lua-nginx-module-v0.10.28.tar.gz
+Source6:        lua-resty-core-v0.1.31.tar.gz
+Source7:        lua-resty-lrucache-v0.15.tar.gz
 
 BuildArch:      x86_64
 
-# Build dependencies
-BuildRequires:  gcc, make, automake, autoconf, libtool, pcre-devel, zlib-devel, openssl-devel
-BuildRequires:  systemd-devel, git
+BuildRequires:  gcc, make, automake, autoconf, libtool
+BuildRequires:  pcre-devel, zlib-devel, openssl-devel
+BuildRequires:  systemd, git, which
+BuildRequires:  readline-devel, perl
+BuildRequires:  luajit, luajit-devel
 
-# Runtime dependencies
 Requires:       pcre, zlib, openssl, systemd
+Requires:       luajit
 
 %description
-NGINX is a high-performance HTTP server, reverse proxy server, and mail proxy server.
-This RPM package includes support for dynamic modules and systemd service management.
+NGINX 1.25.1 with systemd and dynamic module support.
+Included dynamic modules:
+- ngx_http_geoip2
+- nginx-module-vts
+- ngx_devel_kit
+- lua-nginx-module
+Bundled with lua-resty-core and lua-resty-lrucache for Lua support.
 
 %prep
+echo "Cleaning old source directories..."
+rm -rf %{_builddir}/ngx_http_geoip2_module-3.4
+rm -rf %{_builddir}/nginx-module-vts-0.2.4
+rm -rf %{_builddir}/ngx_devel_kit-0.3.4
+rm -rf %{_builddir}/lua-nginx-module-0.10.28
+
+echo "Cloning and packing dynamic modules..."
+
+git clone --depth 1 https://github.com/leev/ngx_http_geoip2_module.git %{_builddir}/ngx_http_geoip2_module-3.4
+tar czf %{_sourcedir}/ngx_http_geoip2_module-v3.4.tar.gz -C %{_builddir} ngx_http_geoip2_module-3.4
+
+git clone --depth 1 https://github.com/vozlt/nginx-module-vts.git %{_builddir}/nginx-module-vts-0.2.4
+tar czf %{_sourcedir}/nginx-module-vts-v0.2.4.tar.gz -C %{_builddir} nginx-module-vts-0.2.4
+
+git clone --depth 1 https://github.com/vision5/ngx_devel_kit.git %{_builddir}/ngx_devel_kit-0.3.4
+tar czf %{_sourcedir}/ngx_devel_kit-v0.3.4.tar.gz -C %{_builddir} ngx_devel_kit-0.3.4
+
+git clone --depth 1 https://github.com/openresty/lua-nginx-module.git %{_builddir}/lua-nginx-module-0.10.28
+tar czf %{_sourcedir}/lua-nginx-module-v0.10.28.tar.gz -C %{_builddir} lua-nginx-module-0.10.28
+
 %setup -q
 
-# Extract dynamic modules (ensure these two modules are included in SOURCES)
-tar xf %{_sourcedir}/ngx_http_geoip2_module-3.4.tar.gz
-tar xf %{_sourcedir}/nginx-module-vts-v0.2.4.tar.gz
+tar xf %{SOURCE2}
+tar xf %{SOURCE3}
+tar xf %{SOURCE4}
+tar xf %{SOURCE5}
+tar xf %{SOURCE6}
+tar xf %{SOURCE7}
 
 %build
+export LUAJIT_LIB=/usr/lib64
+export LUAJIT_INC=/usr/include/luajit-2.1
+
 ./configure \
   --prefix=%{_prefix}/nginx \
   --sbin-path=%{_sbindir}/nginx \
@@ -40,6 +80,7 @@ tar xf %{_sourcedir}/nginx-module-vts-v0.2.4.tar.gz
   --error-log-path=%{_localstatedir}/log/nginx/error.log \
   --user=nginx \
   --group=nginx \
+  --modules-path=%{_prefix}/nginx/modules \
   --with-compat \
   --with-file-aio \
   --with-threads \
@@ -67,91 +108,68 @@ tar xf %{_sourcedir}/nginx-module-vts-v0.2.4.tar.gz
   --with-google_perftools_module \
   --with-debug \
   --with-cc-opt='-DNGX_HTTP_HEADERS -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC' \
-  --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie' \
+  --with-ld-opt='-Wl,-z,relro -Wl,-z,now -pie -Wl,--disable-new-dtags' \
   --add-dynamic-module=%{_builddir}/ngx_http_geoip2_module-3.4 \
-  --add-dynamic-module=%{_builddir}/nginx-module-vts-0.2.4
+  --add-dynamic-module=%{_builddir}/nginx-module-vts-0.2.4 \
+  --add-dynamic-module=%{_builddir}/ngx_devel_kit-0.3.4 \
+  --add-dynamic-module=%{_builddir}/lua-nginx-module-0.10.28
 
 make %{?_smp_mflags}
+  1 Name:           nginx
 
 %install
 rm -rf %{buildroot}
 
-# Create installation directory structure
+# Directories
 install -d %{buildroot}%{_lockdir}
 install -d %{buildroot}%{_rundir}
 install -d %{buildroot}%{_sysconfdir}/nginx
 install -d %{buildroot}%{_sysconfdir}/systemd/system
 install -d %{buildroot}%{_prefix}/nginx/modules
-install -d %{buildroot}%{_localstatedir}/run
+install -d %{buildroot}%{_prefix}/nginx/lib/lua
 install -d %{buildroot}%{_localstatedir}/log/nginx
-install -d %{buildroot}%{_localstatedir}/lock
+install -d %{buildroot}%{_localstatedir}/run
 
-# Install main program
+# Install nginx
 make install DESTDIR=%{buildroot}
 
-# Install default configuration files (optional: replace with spec-configured files)
+# Configuration
 install -m 644 conf/nginx.conf %{buildroot}%{_sysconfdir}/nginx/nginx.conf
 install -m 644 conf/mime.types %{buildroot}%{_sysconfdir}/nginx/mime.types
-
-# Install dynamic modules
-install -m 755 objs/*.so %{buildroot}%{_prefix}/nginx/modules/
-
-# Install systemd service file
 install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/systemd/system/nginx.service
+
+# Lua libraries
+cp -r lua-resty-core-0.1.31/lib/resty %{buildroot}%{_prefix}/nginx/lib/lua/
+cp -r lua-resty-lrucache-0.15/lib/resty %{buildroot}%{_prefix}/nginx/lib/lua/
+
 
 %files
 %defattr(-,root,root,-)
 
-# Main program and configuration files
 %{_sbindir}/nginx
-%config(noreplace)%{_sysconfdir}/nginx/nginx.conf
-%config(noreplace)%{_sysconfdir}/nginx/mime.types
-%config(noreplace)%{_sysconfdir}/nginx/fastcgi.conf
-%config(noreplace)%{_sysconfdir}/nginx/fastcgi.conf.default
-%config(noreplace)%{_sysconfdir}/nginx/fastcgi_params
-%config(noreplace)%{_sysconfdir}/nginx/fastcgi_params.default
-%config(noreplace)%{_sysconfdir}/nginx/koi-utf
-%config(noreplace)%{_sysconfdir}/nginx/koi-win
-%config(noreplace)%{_sysconfdir}/nginx/mime.types.default
-%config(noreplace)%{_sysconfdir}/nginx/nginx.conf.default
-%config(noreplace)%{_sysconfdir}/nginx/scgi_params
-%config(noreplace)%{_sysconfdir}/nginx/scgi_params.default
-%config(noreplace)%{_sysconfdir}/nginx/uwsgi_params
-%config(noreplace)%{_sysconfdir}/nginx/uwsgi_params.default
-%config(noreplace)%{_sysconfdir}/nginx/win-utf
-
-# systemd service file
+%{_sysconfdir}/nginx/*
 %{_sysconfdir}/systemd/system/nginx.service
 
-# Modules
 %{_prefix}/nginx/modules/*.so
+%{_prefix}/nginx/html/*
+%{_prefix}/nginx/lib/lua/**
 
-# Directory structure
-%dir %{_prefix}/nginx/html/
+%dir %{_prefix}/nginx
+%dir %{_prefix}/nginx/modules
 %dir %{_localstatedir}/log/nginx
 %dir %{_localstatedir}/run
 
-# HTML example files
-%{_prefix}/nginx/html/50x.html
-%{_prefix}/nginx/html/index.html
-
-
-%pre
-# Create nginx user (if not already present)
-if ! getent passwd nginx &>/dev/null; then
-    useradd -r -s /sbin/nologin nginx
-fi
-
 %post
-# Set permissions
 chown -R nginx:nginx %{_prefix}/nginx
 chown -R nginx:nginx %{_localstatedir}/log/nginx
-chown -R nginx:nginx %{_localstatedir}/run
 
 %clean
 rm -rf %{buildroot}
 
 %changelog
-* Tue Jul 15 2025 Jas0n0ss - 1.28.0-1
-- Initial RPM package for nginx-1.28.0 with dynamic modules: nginx-module-vts-0.2.4 and ngx_http_geoip2_module-3.4
-
+* Wed Jul 16 2025 Jas0n0ss <jas0n0ss@hotmail.com> - 1.25.1
+- Initial RPM package for nginx 1.25.1 with dynamic modules and LuaJIT support:
+    - ngx_http_geoip2_module-v3.4
+    - nginx-module-vts-v0.2.4
+    - lua-nginx-module-v0.10.28
+    - ngx_devel_kit-v0.3.4

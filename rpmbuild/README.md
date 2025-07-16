@@ -2,11 +2,13 @@
 
 ## Key Features and Modules
 
-- **Version**: 1.28.0
+- **Version**: 1.25.1
 
 - **Dynamic Modules**:
   - `ngx_http_geoip2_module` (GeoIP support)
   - `nginx-module-vts` (Virtual Host Traffic Stats)
+  - `ngx_devel_kit`
+  - `lua-nginx-module` (lua support)
 
 ## Prerequisites
 

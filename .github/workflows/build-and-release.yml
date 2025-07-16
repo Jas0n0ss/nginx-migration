@@ -1,27 +1,16 @@
-name: Build and Release Nginx RPM
-
-on:
-  push:
-    paths:
-      - 'nginx-source/**'
-      - '.github/workflows/build-and-release.yml'
-      - 'scripts/**'
-      - 'rpmbuild/SPECS/nginx.spec'
-
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    container:
+      image: fedora:39
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up RPM build environment and dependencies
+      - name: Install build dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y rpm rpm2cpio cpio gcc make wget \
-            libpcre3-dev zlib1g-dev libssl-dev libreadline-dev \
-            libluajit-5.1-dev libsystemd-dev autoconf automake libtool git
+          dnf install -y rpm-build gcc make wget git autoconf automake libtool \
+            openssl-devel pcre-devel zlib-devel systemd-devel readline-devel luajit-devel
 
       - name: Prepare rpmbuild directories
         run: |
@@ -30,12 +19,10 @@ jobs:
           cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
 
       - name: Copy nginx source tarball
-        run: |
-          cp ./nginx-source/nginx-*.tar.gz ~/rpmbuild/SOURCES/
+        run: cp ./nginx-source/nginx-*.tar.gz ~/rpmbuild/SOURCES/
 
       - name: Build RPM
-        run: |
-          rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
+        run: rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
 
       - name: Find built RPM
         id: find_rpm
@@ -44,8 +31,7 @@ jobs:
           echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
 
       - name: Generate changelog
-        run: |
-          ./scripts/generate_changelog.sh > changelog.txt
+        run: ./scripts/generate_changelog.sh > changelog.txt
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2

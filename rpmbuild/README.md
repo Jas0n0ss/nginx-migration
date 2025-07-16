@@ -33,7 +33,7 @@ sudo apt install build-essential pcre3-dev zlib1g-dev libssl-dev systemd git
 
    ```bash
    dnf groupinstall -y "Development Tools"
-   dnf rpm-build rpmdevtools -y
+   dnf rpm-build rpmdevtools luajit luajit-devel perl readline-devel -y
    git clone https://github.com/Jas0n0ss/ngx_backup_restore.git nginx && nginx
    rpmbuild -ba rpmbuild/SPECS/nginx.spec
    ```

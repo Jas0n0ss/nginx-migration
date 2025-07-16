@@ -42,15 +42,16 @@ Included dynamic modules:
 Bundled with lua-resty-core and lua-resty-lrucache for Lua support.
 
 %prep
-# Clean up any old source directories before building
-echo "Cleaning old source directories..."
-rm -rf %{_builddir}/ngx_http_geoip2_module-3.4
-rm -rf %{_builddir}/nginx-module-vts-0.2.4
-rm -rf %{_builddir}/ngx_devel_kit-0.3.4
-rm -rf %{_builddir}/lua-nginx-module-0.10.28
+echo "Cleaning previous build directories..."
+rm -rf %{_builddir}/ngx_http_geoip2_module-*
+rm -rf %{_builddir}/nginx-module-vts-*
+rm -rf %{_builddir}/ngx_devel_kit-*
+rm -rf %{_builddir}/lua-nginx-module-*
+rm -rf %{_builddir}/lua-resty-core-*
+rm -rf %{_builddir}/lua-resty-lrucache-*
 
-# Clone and package the dynamic modules from their respective git repositories
 echo "Cloning and packing dynamic modules..."
+
 modules=(
   "https://github.com/leev/ngx_http_geoip2_module.git v3.4 ngx_http_geoip2_module"
   "https://github.com/vozlt/nginx-module-vts.git v0.2.4 nginx-module-vts"
@@ -66,15 +67,25 @@ for entry in "${modules[@]}"; do
   version=$2
   name=$3
 
-  dir="%{_builddir}/${name}-${version}"
-  tarball="%{_sourcedir}/${name}-v${version}.tar.gz"
+  dirname="${name}-${version}"
+  dir="%{_builddir}/${dirname}"
+  tarball="%{_sourcedir}/${dirname}.tar.gz"
+
+  echo "→ Processing $name"
 
   if [ ! -d "$dir" ]; then
-    git clone --depth 1 --branch "$version" "$url" "$dir"
+    echo "  - Cloning $url"
+    if git ls-remote --tags "$url" | grep -q "refs/tags/${version}$"; then
+      git clone --depth 1 --branch "$version" "$url" "$dir"
+    else
+      echo "Tag $version not found, defaulting to master"
+      git clone --depth 1 "$url" "$dir"
+    fi
   fi
 
   if [ ! -f "$tarball" ]; then
-    tar czf "$tarball" -C "%{_builddir}" "${name}-${version}"
+    echo "  - Creating $tarball"
+    tar czf "$tarball" -C "%{_builddir}" "$dirname"
   fi
 done
 

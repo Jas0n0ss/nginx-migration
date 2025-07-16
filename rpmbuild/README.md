@@ -48,7 +48,7 @@ sudo apt install build-essential pcre3-dev zlib1g-dev libssl-dev systemd git
     Use `rpm` to install the package:
 
    ```bash
-   sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/nginx-1.28.0-1.x86_64.rpm
+   sudo yum localinstall rpmbuild/RPMS/x86_64/nginx-1.28.0-1.x86_64.rpm
    ```
 
 2. **Enable and Start NGINX Service**

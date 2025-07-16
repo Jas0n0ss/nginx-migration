@@ -1,69 +1,103 @@
-# NGINX RPM Build Guide
+# NGINX 1.25.1 RPM with Dynamic Modules & LuaJIT
 
-## Key Features and Modules
+## 🚀 Features
 
-- **Version**: 1.25.1
+This custom RPM includes:
 
-- **Dynamic Modules**:
-  - `ngx_http_geoip2_module` (GeoIP support)
-  - `nginx-module-vts` (Virtual Host Traffic Stats)
-  - `ngx_devel_kit`
-  - `lua-nginx-module` (lua support)
+- **NGINX 1.25.1**
+- Dynamic modules:
+  - `ngx_http_geoip2_module` (GeoIP2 support)
+  - `nginx-module-vts` (traffic monitoring)
+  - `ngx_devel_kit` (for Lua support)
+  - `lua-nginx-module` (Lua scripting support)
+- Lua libraries:
+  - `lua-resty-core`
+  - `lua-resty-lrucache`
+- Systemd service integration
+- Built with **LuaJIT**
 
-## Prerequisites
+---
 
-Ensure your system has the necessary dependencies for building the RPM package:
-
-### Required Packages:
-
-```bash
-# On RHEL/CentOS/Fedora
-sudo yum groupinstall "Development Tools"
-sudo yum install pcre-devel zlib-devel openssl-devel systemd git
-```
+## 📦 Installation
 
 ```bash
-# On Ubuntu/Debian:
-sudo apt update
-sudo apt install build-essential pcre3-dev zlib1g-dev libssl-dev systemd git
+# sudo rpm -ivh nginx-1.25.1-1.x86_64.rpm
+sudo dnf localinstall nginx-1.25.1-1.x86_64.rpm
 ```
 
-## Build the RPM Package
+Enable and start NGINX:
 
-1. **Build the RPM**
-    After making sure all dependencies are installed, run the following command to build the RPM package:
+```bash
+sudo systemctl enable --now nginx
+```
 
-   ```bash
-   dnf groupinstall -y "Development Tools"
-   dnf rpm-build rpmdevtools luajit luajit-devel perl readline-devel -y
-   git clone https://github.com/Jas0n0ss/ngx_backup_restore.git nginx && nginx
-   rpmbuild -ba rpmbuild/SPECS/nginx.spec
-   ```
+------
 
-   This will compile the NGINX package along with the dynamic modules and systemd service.
+## ⚙️ Configuration
 
-   The file should be named something like `/root/rpmbuild/RPMS/x86_64/nginx-1.28.0-1.el9.x86_64.rpm`.
+Edit main config:
 
-## Install the RPM Package
+```bash
+/etc/nginx/nginx.conf
+```
 
-1. **Install the RPM**
-    Use `rpm` to install the package:
+To enable dynamic modules, add to the top of your config:
 
-   ```bash
-   sudo yum localinstall rpmbuild/RPMS/x86_64/nginx-1.28.0-1.x86_64.rpm
-   ```
+```nginx
+load_module modules/ngx_http_geoip2_module.so;
+load_module modules/ndk_http_module.so;
+load_module modules/ngx_http_lua_module.so;
+load_module modules/ngx_http_vhost_traffic_status_module.so;
+```
 
-2. **Enable and Start NGINX Service**
-    After installation, enable and start the NGINX service with `systemd`:
+------
 
-   ```bash
-   sudo systemctl enable nginx
-   sudo systemctl start nginx
-   ```
+## 🔧 How to Build
 
-3. **Check NGINX Status**
-    Verify that NGINX is running:
+### 1. Install Dependencies
 
-   ```bash
-   sudo systemctl status nginx
-   ```
+```bash
+sudo dnf install -y rpm-build gcc make git \
+  pcre-devel zlib-devel openssl-devel \
+  luajit luajit-devel systemd-devel \
+  readline-devel autoconf automake libtool
+```
+
+### 2. Download NGINX Source
+
+```bash
+cd ~/rpmbuild/SOURCES
+wget http://nginx.org/download/nginx-1.25.1.tar.gz
+```
+
+### 3. Place the `nginx.spec`
+
+Save the provided `nginx.spec` file to:
+
+```bash
+~/rpmbuild/SPECS/nginx.spec
+```
+
+### 4. Build RPM
+
+```bash
+rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
+```
+
+The RPMs will be in:
+
+```bash
+~/rpmbuild/RPMS/x86_64/
+```
+
+------
+
+## 📂 Paths
+
+- Config: `/etc/nginx/nginx.conf`
+- Modules: `/usr/nginx/modules/`
+- Lua libs: `/usr/nginx/lib/lua/resty/`
+- Logs: `/var/log/nginx/`
+
+## 
+

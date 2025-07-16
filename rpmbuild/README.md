@@ -34,7 +34,8 @@ sudo apt install build-essential pcre3-dev zlib1g-dev libssl-dev systemd git
    ```bash
    dnf groupinstall -y "Development Tools"
    dnf rpm-build rpmdevtools -y
-   rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
+   git clone https://github.com/Jas0n0ss/ngx_backup_restore.git nginx && nginx
+   rpmbuild -ba rpmbuild/SPECS/nginx.spec
    ```
 
    This will compile the NGINX package along with the dynamic modules and systemd service.

@@ -1,0 +1,78 @@
+# name: Build NGINX for Multiple OS and Architectures
+
+# on:
+#   push:
+#     paths:
+#       - '**.spec'
+#       - '**.sh'
+#       - '**.tar.gz'
+#       - '**/debian/**'
+#       - '.github/workflows/build-matrix.yml'
+
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+
+#     strategy:
+#       matrix:
+#         os: [centos:stream9, centos:stream8, ubuntu:22.04]
+#         arch: [x86_64, aarch64]
+
+#     container:
+#       image: ${{ matrix.os }}
+
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Install dependencies (RPM)
+#         if: contains(matrix.os, 'centos')
+#         run: |
+#           dnf install -y epel-release || yum install -y epel-release
+#           dnf groupinstall -y "Development Tools" || yum groupinstall -y "Development Tools"
+#           dnf install -y rpm-build gcc make wget git autoconf automake libtool \
+#               openssl-devel pcre2-devel zlib-devel systemd-devel \
+#               readline-devel perl luajit luajit-devel which || true
+
+#       - name: Install dependencies (DEB)
+#         if: contains(matrix.os, 'ubuntu')
+#         run: |
+#           apt-get update
+#           apt-get install -y build-essential devscripts debhelper \
+#               libpcre3-dev zlib1g-dev libssl-dev libreadline-dev \
+#               libluajit-5.1-dev systemd wget git dh-systemd
+
+#       - name: Prepare build tree (RPM)
+#         if: contains(matrix.os, 'centos')
+#         run: |
+#           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+#           cp ./nginx-source/nginx-1.25.0.tar.gz ~/rpmbuild/SOURCES/
+#           cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
+
+#       - name: Build RPM
+#         if: contains(matrix.os, 'centos')
+#         run: rpmbuild --target=${{ matrix.arch }} -ba ~/rpmbuild/SPECS/nginx.spec
+
+#       - name: Build DEB
+#         if: contains(matrix.os, 'ubuntu')
+#         run: |
+#           mkdir -p nginx-build
+#           tar -xf ./nginx-source/nginx-1.25.0.tar.gz -C nginx-build
+#           mv nginx-build/nginx-1.25.0 nginx-build/nginx
+#           cp -r debian nginx-build/nginx/
+#           cd nginx-build/nginx
+#           debuild -us -uc
+
+#       - name: Upload RPM Artifact
+#         if: contains(matrix.os, 'centos')
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: nginx-rpm-${{ matrix.os }}-${{ matrix.arch }}
+#           path: ~/rpmbuild/RPMS/${{ matrix.arch }}/nginx-*.rpm
+
+#       - name: Upload DEB Artifact
+#         if: contains(matrix.os, 'ubuntu')
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: nginx-deb-${{ matrix.os }}-${{ matrix.arch }}
+#           path: ./nginx-build/*.deb

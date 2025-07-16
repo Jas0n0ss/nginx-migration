@@ -51,34 +51,32 @@ rm -rf %{_builddir}/lua-nginx-module-0.10.28
 
 # Clone and package the dynamic modules from their respective git repositories
 echo "Cloning and packing dynamic modules..."
-
-MODULES=(
-  "https://github.com/leev/ngx_http_geoip2_module.git ngx_http_geoip2_module-3.4 ngx_http_geoip2_module-v3.4.tar.gz"
-  "https://github.com/vozlt/nginx-module-vts.git nginx-module-vts-0.2.4 nginx-module-vts-v0.2.4.tar.gz"
-  "https://github.com/vision5/ngx_devel_kit.git ngx_devel_kit-0.3.4 ngx_devel_kit-v0.3.4.tar.gz"
-  "https://github.com/openresty/lua-nginx-module.git lua-nginx-module-0.10.28 lua-nginx-module-v0.10.28.tar.gz"
-  "https://github.com/openresty/lua-resty-core.git lua-resty-core-0.1.31 lua-resty-core-v0.1.31.tar.gz"
-  "https://github.com/openresty/lua-resty-lrucache.git lua-resty-lrucache-0.15 lua-resty-lrucache-v0.15.tar.gz"
+modules=(
+  "https://github.com/leev/ngx_http_geoip2_module.git v3.4 ngx_http_geoip2_module"
+  "https://github.com/vozlt/nginx-module-vts.git v0.2.4 nginx-module-vts"
+  "https://github.com/vision5/ngx_devel_kit.git v0.3.4 ngx_devel_kit"
+  "https://github.com/openresty/lua-nginx-module.git v0.10.28 lua-nginx-module"
+  "https://github.com/openresty/lua-resty-core.git v0.1.31 lua-resty-core"
+  "https://github.com/openresty/lua-resty-lrucache.git v0.15 lua-resty-lrucache"
 )
 
+for entry in "${modules[@]}"; do
+  set -- $entry
+  url=$1
+  version=$2
+  name=$3
 
-git clone --depth 1 https://github.com/leev/ngx_http_geoip2_module.git %{_builddir}/ngx_http_geoip2_module-3.4
-tar czf %{_sourcedir}/ngx_http_geoip2_module-v3.4.tar.gz -C %{_builddir} ngx_http_geoip2_module-3.4
+  dir="%{_builddir}/${name}-${version}"
+  tarball="%{_sourcedir}/${name}-v${version}.tar.gz"
 
-git clone --depth 1 https://github.com/vozlt/nginx-module-vts.git %{_builddir}/nginx-module-vts-0.2.4
-tar czf %{_sourcedir}/nginx-module-vts-v0.2.4.tar.gz -C %{_builddir} nginx-module-vts-0.2.4
+  if [ ! -d "$dir" ]; then
+    git clone --depth 1 --branch "$version" "$url" "$dir"
+  fi
 
-git clone --depth 1 https://github.com/vision5/ngx_devel_kit.git %{_builddir}/ngx_devel_kit-0.3.4
-tar czf %{_sourcedir}/ngx_devel_kit-v0.3.4.tar.gz -C %{_builddir} ngx_devel_kit-0.3.4
-
-git clone --depth 1 https://github.com/openresty/lua-nginx-module.git %{_builddir}/lua-nginx-module-0.10.28
-tar czf %{_sourcedir}/lua-nginx-module-v0.10.28.tar.gz -C %{_builddir} lua-nginx-module-0.10.28
-
-git clone --depth 1 https://github.com/openresty/lua-resty-core.git %{_builddir}/lua-resty-core-0.1.31
-tar czf %{_sourcedir}/%{_builddir}/lua-resty-core-0.1.31 -C %{_builddir}lua-resty-core-0.1.31 
-
-git clone --depth 1 https://github.com/openresty/lua-resty-lrucache.git %{_builddir}/lua-resty-lrucache-0.15
-tar czf %{_sourcedir}/%{_builddir}/lua-resty-lrucache-0.15 -C %{_builddir}lua-resty-lrucache-0.15
+  if [ ! -f "$tarball" ]; then
+    tar czf "$tarball" -C "%{_builddir}" "${name}-${version}"
+  fi
+done
 
 # Unpack the main source and modules
 %setup -q

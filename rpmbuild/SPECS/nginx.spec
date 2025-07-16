@@ -1,12 +1,14 @@
-# nginx.spec - RPM spec file for building Nginx with dynamic modules and systemd support
+# NGINX RPM SPEC FILE WITH LUA AND DYNAMIC MODULE SUPPORT
 
 Name:           nginx
-Version:        1.25.1
+Version:        1.25.0
 Release:        1%{?dist}
 Summary:        High-performance web server and reverse proxy with Lua and dynamic module support
 
 License:        BSD
 URL:            http://nginx.org
+
+# Source tarballs for nginx and modules
 Source0:        nginx-%{version}.tar.gz
 Source1:        nginx.service
 Source2:        ngx_http_geoip2_module-v3.4.tar.gz
@@ -18,17 +20,20 @@ Source7:        lua-resty-lrucache-v0.15.tar.gz
 
 BuildArch:      x86_64
 
+# Build dependencies
 BuildRequires:  gcc, make, automake, autoconf, libtool
-BuildRequires:  pcre-devel, zlib-devel, openssl-devel
+BuildRequires:  pcre2-devel, zlib-devel, openssl-devel
 BuildRequires:  systemd-devel, git, which
 BuildRequires:  readline-devel, perl
 BuildRequires:  luajit, luajit-devel
 
-Requires:       pcre, zlib, openssl, systemd
+# Runtime dependencies
+Requires:       pcre2, zlib, openssl, systemd
 Requires:       luajit
 
 %description
-NGINX 1.25.1 with systemd and dynamic module support.
+# Package description
+NGINX 1.25.0 with systemd and dynamic module support.
 Included dynamic modules:
 - ngx_http_geoip2
 - nginx-module-vts
@@ -37,12 +42,14 @@ Included dynamic modules:
 Bundled with lua-resty-core and lua-resty-lrucache for Lua support.
 
 %prep
+# Clean up any old source directories before building
 echo "Cleaning old source directories..."
 rm -rf %{_builddir}/ngx_http_geoip2_module-3.4
 rm -rf %{_builddir}/nginx-module-vts-0.2.4
 rm -rf %{_builddir}/ngx_devel_kit-0.3.4
 rm -rf %{_builddir}/lua-nginx-module-0.10.28
 
+# Clone and package the dynamic modules from their respective git repositories
 echo "Cloning and packing dynamic modules..."
 
 git clone --depth 1 https://github.com/leev/ngx_http_geoip2_module.git %{_builddir}/ngx_http_geoip2_module-3.4
@@ -57,6 +64,7 @@ tar czf %{_sourcedir}/ngx_devel_kit-v0.3.4.tar.gz -C %{_builddir} ngx_devel_kit-
 git clone --depth 1 https://github.com/openresty/lua-nginx-module.git %{_builddir}/lua-nginx-module-0.10.28
 tar czf %{_sourcedir}/lua-nginx-module-v0.10.28.tar.gz -C %{_builddir} lua-nginx-module-0.10.28
 
+# Unpack the main source and modules
 %setup -q
 
 tar xf %{SOURCE2}
@@ -67,9 +75,11 @@ tar xf %{SOURCE6}
 tar xf %{SOURCE7}
 
 %build
+# Set LuaJIT environment variables for building
 export LUAJIT_LIB=/usr/lib64
 export LUAJIT_INC=/usr/include/luajit-2.1
 
+# Configure nginx with various modules and options
 ./configure \
   --prefix=%{_prefix}/nginx \
   --sbin-path=%{_sbindir}/nginx \
@@ -114,13 +124,14 @@ export LUAJIT_INC=/usr/include/luajit-2.1
   --add-dynamic-module=%{_builddir}/ngx_devel_kit-0.3.4 \
   --add-dynamic-module=%{_builddir}/lua-nginx-module-0.10.28
 
+# Build nginx and modules
 make %{?_smp_mflags}
-  1 Name:           nginx
 
 %install
+# Clean previous install root
 rm -rf %{buildroot}
 
-# Directories
+# Create necessary directories in the buildroot
 install -d %{buildroot}%{_lockdir}
 install -d %{buildroot}%{_rundir}
 install -d %{buildroot}%{_sysconfdir}/nginx
@@ -130,46 +141,46 @@ install -d %{buildroot}%{_prefix}/nginx/lib/lua
 install -d %{buildroot}%{_localstatedir}/log/nginx
 install -d %{buildroot}%{_localstatedir}/run
 
-# Install nginx
+# Install nginx and modules to buildroot
 make install DESTDIR=%{buildroot}
 
-# Configuration
+# Install default configuration files and systemd service
 install -m 644 conf/nginx.conf %{buildroot}%{_sysconfdir}/nginx/nginx.conf
 install -m 644 conf/mime.types %{buildroot}%{_sysconfdir}/nginx/mime.types
 install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/systemd/system/nginx.service
 
-# Lua libraries
+# Copy Lua libraries for nginx Lua module
 cp -r lua-resty-core-0.1.31/lib/resty %{buildroot}%{_prefix}/nginx/lib/lua/
 cp -r lua-resty-lrucache-0.15/lib/resty %{buildroot}%{_prefix}/nginx/lib/lua/
-
 
 %files
 %defattr(-,root,root,-)
 
+# Main nginx binary and configuration
 %{_sbindir}/nginx
 %{_sysconfdir}/nginx/*
 %{_sysconfdir}/systemd/system/nginx.service
 
+# Dynamic modules, html files, and Lua libraries
 %{_prefix}/nginx/modules/*.so
 %{_prefix}/nginx/html/*
 %{_prefix}/nginx/lib/lua/**
 
+# Directory declarations
 %dir %{_prefix}/nginx
 %dir %{_prefix}/nginx/modules
 %dir %{_localstatedir}/log/nginx
 %dir %{_localstatedir}/run
 
 %post
+# Set ownership for nginx directories after install
 chown -R nginx:nginx %{_prefix}/nginx
 chown -R nginx:nginx %{_localstatedir}/log/nginx
 
 %clean
+# Clean up buildroot after build
 rm -rf %{buildroot}
 
 %changelog
-* Wed Jul 16 2025 Jas0n0ss <jas0n0ss@hotmail.com> - 1.25.1
-- Initial RPM package for nginx 1.25.1 with dynamic modules and LuaJIT support:
-    - ngx_http_geoip2_module-v3.4
-    - nginx-module-vts-v0.2.4
-    - lua-nginx-module-v0.10.28
-    - ngx_devel_kit-v0.3.4
+* Wed Jul 16 2025 Jas0n0ss <jas0n0ss@hotmail.com> - 1.25.0-1
+- Initial RPM package for nginx 1.25.0 with Lua and dynamic module support

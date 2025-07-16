@@ -76,7 +76,7 @@ for entry in "${modules[@]}"; do
   if [ ! -d "$dir" ]; then
     echo "  - Cloning $url"
     if git ls-remote --tags "$url" | grep -q "refs/tags/${version}$"; then
-      git clone --depth 1 --branch "$version" "$url" "$dir"
+      git clone --depth 1 --tag "$version" "$url" "$dir"
     else
       echo "Tag $version not found, defaulting to master"
       git clone --depth 1 "$url" "$dir"

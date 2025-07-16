@@ -13,7 +13,7 @@ BuildArch:      x86_64
 
 # Build dependencies
 BuildRequires:  gcc, make, automake, autoconf, libtool, pcre-devel, zlib-devel, openssl-devel
-BuildRequires:  systemd, git
+BuildRequires:  systemd-devel, git
 
 # Runtime dependencies
 Requires:       pcre, zlib, openssl, systemd

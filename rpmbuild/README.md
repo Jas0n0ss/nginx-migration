@@ -32,7 +32,7 @@ sudo apt install build-essential pcre3-dev zlib1g-dev libssl-dev systemd git
     After making sure all dependencies are installed, run the following command to build the RPM package:
 
    ```bash
-   dnf groupinstall -y Development Tools -y
+   dnf groupinstall -y "Development Tools"
    dnf rpm-build rpmdevtools -y
    rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
    ```

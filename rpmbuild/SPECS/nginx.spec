@@ -173,8 +173,8 @@ chown -R nginx:nginx %{_localstatedir}/log/nginx
 rm -rf %{buildroot}
 
 %changelog
-* Wed Jul 16 2025 Jas0n0ss <jas0n0ss@hotmail.com> - 1.25.1
-- Initial RPM package for nginx 1.25.1 with dynamic modules and LuaJIT support:
+* Wed Jul 16 2025 Jas0n0ss <jas0n0ss@hotmail.com> - 1.25.0
+- Initial RPM package for nginx 1.25.0 with dynamic modules and LuaJIT support:
     - ngx_http_geoip2_module-v3.4
     - nginx-module-vts-v0.2.4 
     - lua-nginx-module-v0.10.28

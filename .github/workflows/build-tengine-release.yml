@@ -19,28 +19,15 @@ jobs:
 
       - name: Install build dependencies
         run: |
-          dnf install -y epel-release
-          dnf config-manager --set-enabled crb  
           dnf groupinstall -y "Development Tools"
-          dnf install -y \
-            rpm-build \
-            wget \
-            git \
-            autoconf \
-            automake \
-            libtool \
-            pcre-devel \
-            zlib-devel \
-            openssl-devel \
-            systemd-devel \
-            readline-devel \
-            perl \
-            luajit \
-            luajit-devel \
-            which \
-            gcc \
-            make \
-            libmaxminddb-devel
+          dnf install -y gcc gcc-c++ make autoconf automake libtool \
+            pcre pcre-devel zlib zlib-devel openssl openssl-devel \
+            libaio-devel libatomic libatomic_ops-devel \
+            libmaxminddb libmaxminddb-devel \
+            gperftools gperftools-devel \
+            luajit luajit-devel \
+            perl-devel perl-ExtUtils-Embed \
+            wget unzip git which
 
       - name: Prepare rpmbuild directories
         run: |

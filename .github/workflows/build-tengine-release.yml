@@ -1,4 +1,4 @@
-name: Build and Release Nginx RPM
+name: Build and Release Tengine RPM
 
 on:
   push:

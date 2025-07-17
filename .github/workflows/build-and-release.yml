@@ -30,11 +30,21 @@ jobs:
       - name: Prepare rpmbuild directories
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          cp -r ./rpmbuild/SOURCES/* ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
 
-      - name: Copy nginx source tarball
-        run: cp ./nginx-source/nginx-1.25.0.tar.gz ~/rpmbuild/SOURCES/
+          # Copy nginx source tarball
+          cp ./nginx-source/nginx-1.25.0.tar.gz ~/rpmbuild/SOURCES/
+
+          # Copy other required sources
+          cp ./rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
+          cp ./rpmbuild/SOURCES/ngx_http_geoip2_module-v3.4.tar.gz ~/rpmbuild/SOURCES/
+          cp ./rpmbuild/SOURCES/nginx-module-vts-v0.2.4.tar.gz ~/rpmbuild/SOURCES/
+          cp ./rpmbuild/SOURCES/ngx_devel_kit-v0.3.4.tar.gz ~/rpmbuild/SOURCES/
+          cp ./rpmbuild/SOURCES/lua-nginx-module-v0.10.28.tar.gz ~/rpmbuild/SOURCES/
+          cp ./rpmbuild/SOURCES/lua-resty-core-v0.1.31.tar.gz ~/rpmbuild/SOURCES/
+          cp ./rpmbuild/SOURCES/lua-resty-lrucache-v0.15.tar.gz ~/rpmbuild/SOURCES/
+
+          # Copy nginx.spec
+          cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
 
       - name: Build RPM
         run: rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec

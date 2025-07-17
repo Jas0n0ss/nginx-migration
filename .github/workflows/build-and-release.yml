@@ -24,7 +24,7 @@ jobs:
           dnf install -y epel-release
           dnf groupinstall -y "Development Tools"
           dnf install -y rpm-build wget git autoconf automake libtool \
-            openssl-devel pcre2-devel zlib-devel systemd-devel \
+            pcre-devel openssl-devel zlib-devel systemd-devel \
             readline-devel perl luajit luajit-devel which
 
       - name: Prepare rpmbuild directories

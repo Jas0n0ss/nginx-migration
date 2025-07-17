@@ -9,19 +9,39 @@
 %global lua_core_version  0.1.31
 %global lrucache_version  0.15
 
+# Default value, can be overridden by --define
 %global build_target      nginx,%{nginx_version}
 
 Name:           nginx-custom
-Version:        %{lua: return rpm.expand('%{build_target}'):match('[^,]+,([^,]+)') or '%{nginx_version}'}
+
+Version: %{lua:
+  local s = rpm.expand('%{build_target}')
+  if not s or s == '' then
+    print('1.25.0')
+  else
+    local ver = s:match('^[^,]+,([^,]+)$')
+    if not ver or ver == '' then
+      print('1.25.0')
+    else
+      print(ver)
+    end
+  end
+}
+
 Release:        1%{?dist}
 Summary:        Custom build of NGINX or Tengine with modules
 License:        BSD
 URL:            https://nginx.org/
 
-# Software source switch
-%global main_software     %{lua:
-  local sw,ver = rpm.expand('%{build_target}'):match('([^,]+),([^,]+)')
-  print(sw == 'tengine' and 'tengine-'..ver or 'nginx-'..ver)
+# Select source directory based on build_target
+%global main_software %{lua:
+  local s = rpm.expand('%{build_target}') or ''
+  local sw,ver = s:match('([^,]+),([^,]+)')
+  if sw == 'tengine' then
+    print('tengine-'..(ver or '3.1.0'))
+  else
+    print('nginx-'..(ver or '1.25.0'))
+  end
 }
 
 Source0:        https://nginx.org/download/nginx-%{nginx_version}.tar.gz

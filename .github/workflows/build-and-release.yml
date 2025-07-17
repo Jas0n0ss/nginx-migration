@@ -11,7 +11,6 @@ on:
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
-
     container:
       image: quay.io/centos/centos:stream9
 
@@ -31,17 +30,29 @@ jobs:
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
-          # Copy nginx source tarball
+          # Copy nginx source tarball (still from repo)
           cp ./nginx-source/nginx-1.25.0.tar.gz ~/rpmbuild/SOURCES/
 
-          # Copy other required sources
+          # Copy service file
           cp ./rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SOURCES/ngx_http_geoip2_module-v3.4.tar.gz ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SOURCES/nginx-module-vts-v0.2.4.tar.gz ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SOURCES/ngx_devel_kit-v0.3.4.tar.gz ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SOURCES/lua-nginx-module-v0.10.28.tar.gz ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SOURCES/lua-resty-core-v0.1.31.tar.gz ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SOURCES/lua-resty-lrucache-v0.15.tar.gz ~/rpmbuild/SOURCES/
+
+          # Download remaining source files from GitHub
+          cd ~/rpmbuild/SOURCES/
+
+          curl -L -O https://github.com/leev/ngx_http_geoip2_module/archive/refs/tags/v3.4.tar.gz 
+          curl -L -O https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v0.2.4.tar.gz 
+          curl -L -O https://github.com/vision5/ngx_devel_kit/archive/refs/tags/v0.3.4.tar.gz 
+          curl -L -O https://github.com/openresty/lua-nginx-module/archive/refs/tags/v0.10.28.tar.gz 
+          curl -L -O https://github.com/openresty/lua-resty-core/archive/refs/tags/v0.1.31.tar.gz 
+          curl -L -O https://github.com/openresty/lua-resty-lrucache/archive/refs/tags/v0.15.tar.gz 
+
+          # Rename files to match what's expected in the .spec
+          mv v3.4.tar.gz ngx_http_geoip2_module-v3.4.tar.gz
+          mv v0.2.4.tar.gz nginx-module-vts-v0.2.4.tar.gz
+          mv v0.3.4.tar.gz ngx_devel_kit-v0.3.4.tar.gz
+          mv v0.10.28.tar.gz lua-nginx-module-v0.10.28.tar.gz
+          mv v0.1.31.tar.gz lua-resty-core-v0.1.31.tar.gz
+          mv v0.15.tar.gz lua-resty-lrucache-v0.15.tar.gz
 
           # Copy nginx.spec
           cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/

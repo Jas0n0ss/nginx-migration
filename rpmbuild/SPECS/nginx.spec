@@ -8,7 +8,6 @@
 %global lua_resty_lrucache_version 0.15
 %global _lockdir /var/lock
 
-
 Summary: NGINX with Lua and dynamic module support
 Name: nginx
 Version: %{nginx_version}
@@ -18,13 +17,6 @@ URL: http://nginx.org
 
 Source0: https://nginx.org/download/nginx-%{nginx_version}.tar.gz
 Source1: nginx.service
-# Source1: https://github.com/leev/ngx_http_geoip2_module/archive/refs/tags/%{geoip2_version}.tar.gz
-# Source2: https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v%{vts_version}.tar.gz
-# Source3: https://github.com/vision5/ngx_devel_kit/archive/refs/tags/v%{devel_kit_version}.tar.gz
-# Source4: https://github.com/openresty/lua-nginx-module/archive/refs/tags/v%{lua_nginx_version}.tar.gz
-# Source5: https://github.com/openresty/lua-resty-core/archive/refs/tags/v%{lua_resty_core_version}.tar.gz
-# Source6: https://github.com/openresty/lua-resty-lrucache/archive/refs/tags/v%{lua_resty_lrucache_version}.tar.gz
-# Source7: nginx.service
 
 BuildArch:      x86_64
 BuildRequires: gcc, make, automake, autoconf, libtool
@@ -143,7 +135,7 @@ make install DESTDIR=%{buildroot}
 # Configuration
 install -m 644 conf/nginx.conf %{buildroot}%{_sysconfdir}/nginx/nginx.conf
 install -m 644 conf/mime.types %{buildroot}%{_sysconfdir}/nginx/mime.types
-install -m 644 %{Source1} %{buildroot}%{_sysconfdir}/systemd/system/nginx.service
+install -m 644 %{SOURCE1} %{buildroot}%{_sysconfdir}/systemd/system/nginx.service
 
 # Lua libraries
 cp -a %{_builddir}/lua-resty-core-0.1.31/lib/resty %{buildroot}/usr/nginx/lib/lua/

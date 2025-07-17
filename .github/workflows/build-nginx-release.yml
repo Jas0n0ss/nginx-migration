@@ -37,13 +37,14 @@ jobs:
             luajit-devel \
             which \
             gcc \
-            make
+            make \
+            libmaxminddb-devel
 
       - name: Prepare rpmbuild directories
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          cp ./rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
+          cp rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
+          cp rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
           cd ~/rpmbuild/SOURCES/
           wget https://nginx.org/download/nginx-1.25.0.tar.gz
          

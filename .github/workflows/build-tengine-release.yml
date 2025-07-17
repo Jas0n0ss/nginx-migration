@@ -37,7 +37,8 @@ jobs:
             luajit-devel \
             which \
             gcc \
-            make
+            make \
+            libmaxminddb-devel
 
       - name: Prepare rpmbuild directories
         run: |

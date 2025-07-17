@@ -6,7 +6,7 @@ on:
       - "nginx-source/**"
       - "rpmbuild/SPECS/nginx.spec"
       - "scripts/**"
-      - ".github/workflows/build-and-release.yml"
+      - ".github/workflows/build-nginx-release.yml"
 
 jobs:
   build-nginx-release:

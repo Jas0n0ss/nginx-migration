@@ -4,12 +4,11 @@ on:
   push:
     paths:
       - "nginx-source/**"
-      - "rpmbuild/SPECS/nginx.spec"
-      - "scripts/**"
-      - ".github/workflows/build-nginx-release.yml"
+      - "rpmbuild/SPECS/tengine.spec"
+      - ".github/workflows/build-tengine-release.yml"
 
 jobs:
-  build-nginx-release:
+  build-tengine-release:
     runs-on: ubuntu-latest
     container:
       image: quay.io/centos/centos:stream9
@@ -43,19 +42,14 @@ jobs:
       - name: Prepare rpmbuild directories
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          cp ./nginx-source/nginx-1.25.0.tar.gz ~/rpmbuild/SOURCES/
           cp ./rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
-          cd ~/rpmbuild/SOURCES/
-          wget -LO ngx_http_geoip2_module-v3.4.tar.gz https://github.com/leev/ngx_http_geoip2_module/archive/refs/tags/3.4.tar.gz 
-          wget -LO nginx-module-vts-v0.2.4.tar.gz https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v0.2.4.tar.gz 
-          wget -LO ngx_devel_kit-v0.3.4.tar.gz https://github.com/vision5/ngx_devel_kit/archive/refs/tags/v0.3.4.tar.gz 
-          wget -LO lua-nginx-module-v0.10.28.tar.gz https://github.com/openresty/lua-nginx-module/archive/refs/tags/v0.10.28.tar.gz
-          wget -LO lua-resty-core-v0.1.31.tar.gz https://github.com/openresty/lua-resty-core/archive/refs/tags/v0.1.31.tar.gz
-          wget -LO lua-resty-lrucache-v0.15.tar.gz https://github.com/openresty/lua-resty-lrucache/archive/refs/tags/v0.15.tar.gz
-          cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
-
+          cp ./rpmbuild/SPECS/tengine.spec ~/rpmbuild/SPECS/
+          cd ~/rpmbuild/SOURCES/ 
+          wget https://tengine.taobao.org/download/tengine-3.1.0.tar.gz
+         
+          
       - name: Build RPM
-        run: rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
+        run: rpmbuild -ba ~/rpmbuild/SPECS/tengine.spec
 
       - name: Find built RPM
         id: find_rpm

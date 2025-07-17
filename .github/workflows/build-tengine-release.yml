@@ -29,7 +29,8 @@ jobs:
             gperftools gperftools-devel \
             luajit luajit-devel \
             perl-devel perl-ExtUtils-Embed \
-            wget unzip git which
+            wget unzip git which \
+            perl readline-devel systemd-devel
 
       - name: Prepare rpmbuild directories
         run: |

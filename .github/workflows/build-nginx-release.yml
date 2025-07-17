@@ -1,0 +1,85 @@
+name: Build and Release Nginx RPM
+
+on:
+  push:
+    paths:
+      - "nginx-source/**"
+      - "rpmbuild/SPECS/nginx.spec"
+      - "scripts/**"
+      - ".github/workflows/build-and-release.yml"
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/centos/centos:stream9
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          dnf install -y epel-release
+          dnf install -y \
+            rpm-build \
+            wget \
+            git \
+            autoconf \
+            automake \
+            libtool \
+            pcre-devel \
+            zlib-devel \
+            openssl-devel \
+            systemd-devel \
+            readline-devel \
+            perl \
+            luajit \
+            luajit-devel \
+            which \
+            gcc \
+            make
+
+      - name: Prepare rpmbuild directories
+        run: |
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+          # Copy nginx source tarball
+          cp ./nginx-source/nginx-1.25.0.tar.gz ~/rpmbuild/SOURCES/
+
+          # Copy service file
+          cp ./rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
+
+          # Change directory to SOURCES
+          cd ~/rpmbuild/SOURCES/
+
+          # Download and rename files using wget
+          wget -O ngx_http_geoip2_module-v3.4.tar.gz https://github.com/leev/ngx_http_geoip2_module/archive/refs/tags/v3.4.tar.gz 
+          wget -O nginx-module-vts-v0.2.4.tar.gz https://github.com/vozlt/nginx-module-vts/archive/refs/tags/v0.2.4.tar.gz 
+          wget -O ngx_devel_kit-v0.3.4.tar.gz https://github.com/vision5/ngx_devel_kit/archive/refs/tags/v0.3.4.tar.gz 
+          wget -O lua-nginx-module-v0.10.28.tar.gz https://github.com/openresty/lua-nginx-module/archive/refs/tags/v0.10.28.tar.gz 
+          wget -O lua-resty-core-v0.1.31.tar.gz https://github.com/openresty/lua-resty-core/archive/refs/tags/v0.1.31.tar.gz 
+          wget -O lua-resty-lrucache-v0.15.tar.gz https://github.com/openresty/lua-resty-lrucache/archive/refs/tags/v0.15.tar.gz 
+
+          # Copy nginx.spec
+          cp ./rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/
+
+      - name: Build RPM
+        run: rpmbuild -ba ~/rpmbuild/SPECS/nginx.spec
+
+      - name: Find built RPM
+        id: find_rpm
+        run: |
+          RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "nginx-*.rpm" | head -n1)
+          echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        run: ./scripts/generate_changelog.sh > changelog.txt
+
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.find_rpm.outputs.rpm_path }}
+          body_path: changelog.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

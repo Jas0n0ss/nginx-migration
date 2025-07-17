@@ -9,10 +9,14 @@
 For CentOS/RHEL:
 
 ```bash
-sudo dnf install -y rpm-build gcc make git \
+dnf install -y epel-release
+dnf config-manager --set-enabled crb
+
+dnf install -y rpm-build gcc make git \
   pcre-devel zlib-devel openssl-devel \
   luajit luajit-devel systemd-devel \
-  readline-devel autoconf automake libtool
+  readline-devel autoconf automake libtool \
+  wget perl which libmaxminddb-devel
 ```
 
 ### 2. Download Nginx Source

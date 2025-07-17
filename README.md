@@ -42,11 +42,21 @@ The RPM package will be generated in:
 ~/rpmbuild/RPMS/x86_64/
 ```
 
-### 5. Install Nginx
+### 5. Backup & Install Nginx
 
 ```bash
-sudo dnf localinstall nginx-1.25.1-1.x86_64.rpm
+# backup 
+tar cvzf /tmp/`hostname`-conf-data.tgz /etc/nginx /data/static
+```
+
+```bash
+# restore
+tar xf <hostname>-conf-data.tgz 
+cp -r etc/nginx /etc && cp -r data/static /data
+wget https://github.com/Jas0n0ss/ngx-migration/releases/download/v1.0/nginx-1.25.0-1.el9.x86_64.rpm
+sudo dnf localinstall nginx-1.28.0-1.el9.x86_64.rpm -y
 sudo systemctl enable --now nginx
+sudo systemctl status nginx 
 ```
 
 ### 6. Enable Dynamic Modules (if needed)
@@ -60,60 +70,7 @@ load_module modules/ngx_http_lua_module.so;
 load_module modules/ngx_http_vhost_traffic_status_module.so;
 ```
 
----
-
-## 2. Nginx Config & Static Files Backup and Restore
-
-### 1. Backup
-
-#### Script Description
-
-- `backup-restore/ngx.sh` supports backing up Nginx config and static directory (default `/data/static`).
-- The backup will split config files, keep original paths, and archive them.
-
-#### Usage
-
-```bash
-./ngx.sh --backup --output <backup_dir> [--perm <permission>] [--static-dir <static_dir>] [--verbose]
-```
-
-- `--output`: required, output directory
-- `--perm`: optional, config file permission (e.g. 0644)
-- `--static-dir`: optional, static directory, default `/data/static`
-- `--verbose`: optional, show detailed logs
-
-**Example:**
-
-```bash
-./ngx.sh --backup --output /tmp/nginx_backup --perm 0644 --static-dir /data/static --verbose
-```
-
-The backup archive will be generated as `/tmp/<hostname>-nginx-backup-conf-with-data-static.tgz` by default.
-
----
-
-### 2. Restore
-
-#### Usage
-
-```bash
-./ngx.sh --restore --input <backup_archive.tgz> [--restore-nginx-dir <nginx_conf_dir>] [--restore-static-dir <static_dir>] [--verbose]
-```
-
-- `--input`: required, backup archive file
-- `--restore-nginx-dir`: optional, restore Nginx config dir, default `/etc/nginx`
-- `--restore-static-dir`: optional, restore static dir, default `/data/static`
-- `--verbose`: optional, show detailed logs
-
-**Example:**
-
-```bash
-./ngx.sh --restore --input /tmp/nginx-backup.tgz --restore-nginx-dir /etc/nginx --restore-static-dir /data/static --verbose
-```
-
----
-
-## 3. Notes
+### 7. Notes
 
 - Make sure the `nginx` command is available for backup.
 - Restore will overwrite config and static files in the target directory. Ensure data safety before proceeding.
@@ -121,9 +78,7 @@ The backup archive will be generated as `/tmp/<hostname>-nginx-backup-conf-with-
 - Static directory is optional; if not present, it will be skipped.
 - For more features and parameters, see [backup-restore/README.md](backup-restore/README.md) and [rpmbuild/README.md](rpmbuild/README.md).
 
----
-
-## 4. Common Paths
+### 8. Common Paths
 
 - Config file: `/etc/nginx/nginx.conf`
 - Modules directory: `/usr/nginx/modules/`

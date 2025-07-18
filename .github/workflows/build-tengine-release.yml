@@ -1,92 +1,92 @@
-name: Build and Release Tengine RPM
+# name: Build and Release Tengine RPM
 
-on:
-  push:
-    paths:
-      - "nginx-source/**"
-      - "rpmbuild/SPECS/tengine.spec"
-      - ".github/workflows/build-tengine-release.yml"
+# on:
+#   push:
+#     paths:
+#       - "nginx-source/**"
+#       - "rpmbuild/SPECS/tengine.spec"
+#       - ".github/workflows/build-tengine-release.yml"
 
-jobs:
-  build-tengine-release:
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/centos/centos:stream9
+# jobs:
+#   build-tengine-release:
+#     runs-on: ubuntu-latest
+#     container:
+#       image: quay.io/centos/centos:stream9
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-      - name: Install build dependencies
-        run: |
-          dnf install -y epel-release
-          dnf config-manager --set-enabled crb
-          dnf groupinstall -y "Development Tools"
-          dnf install -y gcc gcc-c++ make autoconf automake libtool \
-            pcre pcre-devel zlib zlib-devel openssl openssl-devel \
-            libaio-devel libatomic libatomic_ops-devel \
-            libmaxminddb libmaxminddb-devel \
-            gperftools gperftools-devel \
-            luajit luajit-devel \
-            perl-devel perl-ExtUtils-Embed \
-            wget unzip git which \
-            perl readline-devel systemd-devel
+#       - name: Install build dependencies
+#         run: |
+#           dnf install -y epel-release
+#           dnf config-manager --set-enabled crb
+#           dnf groupinstall -y "Development Tools"
+#           dnf install -y gcc gcc-c++ make autoconf automake libtool \
+#             pcre pcre-devel zlib zlib-devel openssl openssl-devel \
+#             libaio-devel libatomic libatomic_ops-devel \
+#             libmaxminddb libmaxminddb-devel \
+#             gperftools gperftools-devel \
+#             luajit luajit-devel \
+#             perl-devel perl-ExtUtils-Embed \
+#             wget unzip git which \
+#             perl readline-devel systemd-devel
 
-      - name: Prepare rpmbuild directories
-        run: |
-          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          cp rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
-          cp rpmbuild/SPECS/tengine.spec ~/rpmbuild/SPECS/
-          cp build.sh ~/rpmbuild/SPECS/
-          cd ~/rpmbuild/SOURCES/
+#       - name: Prepare rpmbuild directories
+#         run: |
+#           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+#           cp rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
+#           cp rpmbuild/SPECS/tengine.spec ~/rpmbuild/SPECS/
+#           cp build.sh ~/rpmbuild/SPECS/
+#           cd ~/rpmbuild/SOURCES/
          
-      - name: Build RPM
-        run: TENGINE=3.1.0 ~/rpmbuild/SPECS/build.sh
+#       - name: Build RPM
+#         run: TENGINE=3.1.0 ~/rpmbuild/SPECS/build.sh
 
-      - name: Find built RPM
-        id: find_rpm
-        run: |
-          RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "tengine-*.rpm" | head -n1)
-          echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
+#       - name: Find built RPM
+#         id: find_rpm
+#         run: |
+#           RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "tengine-*.rpm" | head -n1)
+#           echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
 
-      - name: Generate static changelog
-        run: |
-          cat <<EOF > changelog.txt
-          - Wed Jul 16 2025 Jas0n0ss 
-          - Initial RPM package for Tengine 3.1.0 with dynamic modules and LuaJIT support:
-            - ngx_http_geoip2_module-v3.4
-            - nginx-module-vts-v0.2.4 
-            - lua-nginx-module-v0.10.28
-            - ngx_devel_kit-v0.3.4
-          EOF
+#       - name: Generate static changelog
+#         run: |
+#           cat <<EOF > changelog.txt
+#           - Wed Jul 16 2025 Jas0n0ss 
+#           - Initial RPM package for Tengine 3.1.0 with dynamic modules and LuaJIT support:
+#             - ngx_http_geoip2_module-v3.4
+#             - nginx-module-vts-v0.2.4 
+#             - lua-nginx-module-v0.10.28
+#             - ngx_devel_kit-v0.3.4
+#           EOF
 
-      - name: Create and push tag
-        run: |
-          git fetch --tags
-          git reset --hard origin/main
-          git checkout -b tengine-3.1.0
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git tag -a tengine-3.1.0 -m "Release Tengine 3.1.0"
-          git push origin tengine-3.1.0
+#       - name: Create and push tag
+#         run: |
+#           git fetch --tags
+#           git reset --hard origin/main
+#           git checkout -b tengine-3.1.0
+#           git config user.name "GitHub Actions"
+#           git config user.email "actions@github.com"
+#           git tag -a tengine-3.1.0 -m "Release Tengine 3.1.0"
+#           git push origin tengine-3.1.0
 
-      - name: Upload Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: tengine-3.1.0
-          files: ${{ steps.find_rpm.outputs.rpm_path }}
-          body_path: changelog.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}   
+#       - name: Upload Release
+#         uses: softprops/action-gh-release@v2
+#         with:
+#           tag_name: tengine-3.1.0
+#           files: ${{ steps.find_rpm.outputs.rpm_path }}
+#           body_path: changelog.txt
+#         env:
+#           GITHUB_TOKEN: ${{ secrets.GH_PAT }}   
 
-      - name: Clean up
-        run: |
-          rm -rf ~/rpmbuild
-          rm -f changelog.txt
-          git tag -d tengine-3.1.0 || true
-          git push origin :refs/tags/tengine-3.1.0 || true
-          git checkout main
-          git reset --hard origin/main
-          git clean -fdx    
-          echo "Build and release process completed successfully."
-          exit 0
+#       - name: Clean up
+#         run: |
+#           rm -rf ~/rpmbuild
+#           rm -f changelog.txt
+#           git tag -d tengine-3.1.0 || true
+#           git push origin :refs/tags/tengine-3.1.0 || true
+#           git checkout main
+#           git reset --hard origin/main
+#           git clean -fdx    
+#           echo "Build and release process completed successfully."
+#           exit 0

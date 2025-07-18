@@ -67,7 +67,8 @@ jobs:
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: nginx  # or "v1.25.0" etc.
           files: ${{ steps.find_rpm.outputs.rpm_path }}
           body_path: changelog.txt
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}

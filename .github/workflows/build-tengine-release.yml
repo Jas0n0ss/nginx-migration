@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          path: ./src
 
       - name: Install build dependencies
         run: |
@@ -63,6 +65,9 @@ jobs:
 
       - name: Create and push tag
         run: |
+          cd ./src
+          git fetch --tags
+          git reset --hard origin/main
           TAG_NAME="tengine-3.1.0"
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"

@@ -52,9 +52,17 @@ jobs:
           RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "tengine-*.rpm" | head -n1)
           echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
 
-      - name: Generate changelog from Git commits
+      - name: Generate static changelog
         run: |
-          git log -n 20 --pretty=format:"- %s (%h)" > changelog.txt
+          cat <<EOF > changelog.txt
+          - Wed Jul 16 2025 Jas0n0ss 
+          - Initial RPM package for Tengine 3.1.0 with dynamic modules and LuaJIT support:
+            - ngx_http_geoip2_module-v3.4
+            - nginx-module-vts-v0.2.4 
+            - lua-nginx-module-v0.10.28
+            - ngx_devel_kit-v0.3.4
+          EOF
+
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2

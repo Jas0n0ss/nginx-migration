@@ -63,11 +63,18 @@ jobs:
             - ngx_devel_kit-v0.3.4
           EOF
 
+      - name: Create and push tag
+        run: |
+          TAG_NAME="tengine-3.1.0"
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: nginx  # or "v1.25.0" etc.
+          tag_name: $TAG_NAME
           files: ${{ steps.find_rpm.outputs.rpm_path }}
           body_path: changelog.txt
         env:

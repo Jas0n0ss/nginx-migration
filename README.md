@@ -11,12 +11,16 @@ For CentOS/RHEL:
 ```bash
 dnf install -y epel-release
 dnf config-manager --set-enabled crb
-
-dnf install -y rpm-build gcc make git \
-  pcre-devel zlib-devel openssl-devel \
-  luajit luajit-devel systemd-devel \
-  readline-devel autoconf automake libtool \
-  wget perl which libmaxminddb-devel
+dnf groupinstall -y "Development Tools"
+dnf install -y gcc gcc-c++ make autoconf automake libtool \
+    pcre pcre-devel zlib zlib-devel openssl openssl-devel \
+    libaio-devel libatomic libatomic_ops-devel \
+    libmaxminddb libmaxminddb-devel \
+    gperftools gperftools-devel \
+    luajit luajit-devel \
+    perl-devel perl-ExtUtils-Embed \
+    wget unzip git which \
+    perl readline-devel systemd-devel
 ```
 
 ### 2. Download Nginx Source

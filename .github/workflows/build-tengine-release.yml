@@ -49,14 +49,12 @@ jobs:
       - name: Find built RPM
         id: find_rpm
         run: |
-          RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "nginx-*.rpm" | head -n1)
+          RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "tengine-*.rpm" | head -n1)
           echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
 
-      - name: Make changelog script executable
-        run: chmod +x ./scripts/generate_changelog.sh
-
-      - name: Generate changelog
-        run: ./scripts/generate_changelog.sh > changelog.txt
+      - name: Generate changelog from Git commits
+        run: |
+          git log -n 20 --pretty=format:"- %s (%h)" > changelog.txt
 
       - name: Upload Release
         uses: softprops/action-gh-release@v2

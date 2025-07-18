@@ -1,11 +1,13 @@
-%global nginx_version 1.25.0
-%global tengine_version 3.1.0
-%global geoip2_version 3.4
-%global vts_version 0.2.4
-%global devel_kit_version 0.3.4
-%global lua_nginx_version 0.10.28
-%global lua_resty_core_version 0.1.31
-%global lua_resty_lrucache_version 0.15
+%{!?nginx_version: %global nginx_version 1.25.0}
+%{!?tengine_version: %global tengine_version 3.1.0}
+%{!?geoip2_version: %global geoip2_version 3.4}
+%{!?vts_version: %global vts_version 0.2.4}
+%{!?devel_kit_version: %global devel_kit_version 0.3.4}
+%{!?lua_nginx_version: %global lua_nginx_version 0.10.28}
+%{!?lua_resty_core_version: %global lua_resty_core_version 0.1.31}
+%{!?lua_resty_lrucache_version: %global lua_resty_lrucache_version 0.15}
+
+
 %global _lockdir /var/lock
 
 Summary: NGINX with Lua and dynamic module support

@@ -35,14 +35,13 @@ jobs:
       - name: Prepare rpmbuild directories
         run: |
           mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-          cp ./rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
-          cp ./rpmbuild/SPECS/tengine.spec ~/rpmbuild/SPECS/
-          cd ~/rpmbuild/SOURCES/ 
-          wget https://tengine.taobao.org/download/tengine-3.1.0.tar.gz
+          cp rpmbuild/SOURCES/nginx.service ~/rpmbuild/SOURCES/
+          cp rpmbuild/SPECS/tengine.spec ~/rpmbuild/SPECS/
+          cp build.sh ~/rpmbuild/SPECS/
+          cd ~/rpmbuild/SOURCES/
          
-          
       - name: Build RPM
-        run: rpmbuild -ba ~/rpmbuild/SPECS/tengine.spec
+        run: TENGINE=3.1.0 ~/rpmbuild/SPECS/build.sh
 
       - name: Find built RPM
         id: find_rpm
@@ -70,7 +69,7 @@ jobs:
           git config user.email "actions@github.com"
           git tag -a tengine-3.1.0 -m "Release Tengine 3.1.0"
           git push origin tengine-3.1.0
-          
+
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:

@@ -56,54 +56,39 @@ dnf install -y gcc gcc-c++ make autoconf automake libtool \
     perl readline-devel systemd-devel
 ```
 
-### 2. Download Sources
-
-```bash
-cd ~/rpmbuild/SOURCES
-
-# If building NGINX
-wget http://nginx.org/download/nginx-1.25.0.tar.gz
-
-# If building Tengine
-wget http://tengine.taobao.org/download/tengine-3.1.0.tar.gz
-```
-
-### 3. Prepare SPEC File
+### 2. Prepare SPEC File
 
 Save the correct spec file to:
 
 ```bash
 # For NGINX
 cp rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/nginx.spec
-
 # For Tengine
 cp rpmbuild/SPECS/tengine.spec ~/rpmbuild/SPECS/tengine.spec
 ```
 
 ------
 
-### 4. Build with `build.sh` Script
+### 3. Build with `build.sh` Script
 
 The script automatically detects whether to use `nginx.spec` or `tengine.spec` based on the environment variable `TENGINE`.
 
-#### ✅ Example: Build NGINX RPM
-
 ```bash
-# scripts/build.sh --help
-NGINX=1.25.0 scripts/build.sh
-TENGINE=3.1.0 scripts/build.sh
+# build.sh --help
+NGINX=1.25.0 ./build.sh
+TENGINE=3.1.0 ./build.sh
 #
 TENGINE=3.1.0 GEOIP2=3.4 VTS=0.2.4 \
 DEVEL_KIT=0.3.4 LUA_NGINX=0.10.28 LUA_RESTY_CORE=0.1.24 \
-LUA_RESTY_LRUCACHE=0.13 scripts/build.sh
+LUA_RESTY_LRUCACHE=0.13 ./build.sh
 ```
 
 > 💡 At least one of `NGINX` or `TENGINE` must be defined.
->  The script will automatically choose `nginx.spec` or `tengine.spec` accordingly.
+> The script will automatically choose `nginx.spec` or `tengine.spec` accordingly.
 
 ------
 
-### 5. RPM Output
+### 4. RPM Output
 
 After building, you'll find the RPM(s) here:
 
@@ -111,18 +96,7 @@ After building, you'll find the RPM(s) here:
 ~/rpmbuild/RPMS/x86_64/
 ```
 
-------
-
-## 📂 Installed Paths
-
-| File / Directory            | Description                       |
-| --------------------------- | --------------------------------- |
-| `/etc/nginx/nginx.conf`     | Main configuration file           |
-| `/usr/nginx/modules/`       | Dynamic modules (.so files)       |
-| `/usr/nginx/lib/lua/resty/` | Lua libraries (`resty-core`, etc) |
-| `/var/log/nginx/`           | Logs                              |
-
-### 6. Backup & Install Nginx
+### 5. Backup & Install Nginx
 
 ```bash
 # backup 
@@ -136,7 +110,7 @@ sudo systemctl enable --now nginx
 sudo systemctl status nginx 
 ```
 
-### 7. Enable Dynamic Modules (if needed)
+### 6. Enable Dynamic Modules (if needed)
 
 Edit `/etc/nginx/nginx.conf` and add at the top:
 

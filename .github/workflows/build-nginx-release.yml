@@ -48,6 +48,9 @@ jobs:
         run: |
           RPM_PATH=$(find ~/rpmbuild/RPMS/ -name "nginx-*.rpm" | head -n1)
           echo "rpm_path=$RPM_PATH" >> $GITHUB_OUTPUT
+      
+      - name: Make changelog script executable
+        run: chmod +x ./scripts/generate_changelog.sh
 
       - name: Generate changelog
         run: ./scripts/generate_changelog.sh > changelog.txt

@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          path: ./src
 
       - name: Install build dependencies
         run: |
@@ -65,20 +63,31 @@ jobs:
 
       - name: Create and push tag
         run: |
-          cd ./src
           git fetch --tags
           git reset --hard origin/main
-          TAG_NAME="tengine-3.1.0"
+          git checkout -b tengine-3.1.0
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
-
+          git tag -a tengine-3.1.0 -m "Release Tengine 3.1.0"
+          git push origin tengine-3.1.0
+          
       - name: Upload Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: $TAG_NAME
+          tag_name: tengine-3.1.0
           files: ${{ steps.find_rpm.outputs.rpm_path }}
           body_path: changelog.txt
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}   
+
+      - name: Clean up
+        run: |
+          rm -rf ~/rpmbuild
+          rm -f changelog.txt
+          git tag -d tengine-3.1.0 || true
+          git push origin :refs/tags/tengine-3.1.0 || true
+          git checkout main
+          git reset --hard origin/main
+          git clean -fdx    
+          echo "Build and release process completed successfully."
+          exit 0

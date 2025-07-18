@@ -50,5 +50,9 @@ fi
 echo "Building RPM with versions:"
 echo "$MACROS"
 
-# Use eval to properly expand the string with quotes
-eval rpmbuild $MACROS -ba ~/rpmbuild/SOURCES/nginx.spec
+SPEC_FILE="~/rpmbuild/SOURCES/nginx.spec"
+if [[ -n "$TENGINE" ]]; then
+  SPEC_FILE="~/rpmbuild/SOURCES/tengine.spec"
+fi
+
+eval rpmbuild $MACROS -ba $SPEC_FILE

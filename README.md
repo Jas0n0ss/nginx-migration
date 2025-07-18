@@ -61,6 +61,7 @@ dnf install -y gcc gcc-c++ make autoconf automake libtool \
 Save the correct spec file to:
 
 ```bash
+rpmdev-setuptree
 # For NGINX
 cp rpmbuild/SPECS/nginx.spec ~/rpmbuild/SPECS/nginx.spec
 # For Tengine

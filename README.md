@@ -105,7 +105,7 @@ tar cvzf /tmp/`hostname`-conf-data.tgz /etc/nginx /data/static
 # restore
 tar xf <hostname>-conf-data.tgz 
 cp -r etc/nginx /etc && cp -r data/static /data
-wget https://github.com/Jas0n0ss/ngx-migration/releases/download/v1.0/nginx-1.25.0-1.el9.x86_64.rpm
+wget https://github.com/Jas0n0ss/nginx-migration/releases/download/nginx/nginx-1.28.0-1.el9.x86_64.rpm
 sudo dnf localinstall nginx-1.28.0-1.el9.x86_64.rpm -y
 sudo systemctl enable --now nginx
 sudo systemctl status nginx 
